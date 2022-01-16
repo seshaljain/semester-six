@@ -4,6 +4,7 @@ This repository contains my assignments for CSE Semester 6 (Jan-Jun 2022) @ MANI
 
 ## Courses
 
-| Code    | Subject                                  | Professor             |
-| ------- | ---------------------------------------- | --------------------- |
-| CSE 325 | [Computer Networks](./computer-networks) | Prof. Rahul Haripriya |
+| Code    | Subject                                          | Professor                |
+| ------- | ------------------------------------------------ | ------------------------ |
+| CSE 325 | [Computer Networks](./computer-networks)         | Prof. Rahul Haripriya    |
+| CSE 326 | [Data Warehousing & Mining](./data-warehousing/) | Prof. Deepak Singh Tomar |
