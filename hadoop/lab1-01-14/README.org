@@ -1,0 +1,34 @@
+#+TITLE: Hadoop Lab
+#+SUBTITLE: Lab 1
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: January 14, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436
+
+* Hadoop Installation
+On Arch Linux (Manjaro), hadoop can be installed via the AUR.
+
+#+begin_src sh
+$ yay -S hadoop
+#+end_src
+
+Hadoop also requires manual setup. \\
+In =/etc/hadoop/hadoop-env.sh=, =JAVA_HOME= must be set to the correct Java path.
+
+#+begin_src sh
+export JAVA_HOME=/usr/lib/jvm/default
+#+end_src
+
+Successful installation can be checked via
+#+begin_src sh
+$ hadoop version
+#+end_src
+
+On successfully running Hadoop, Web based GUI can be accessed via =localhost:9870=
+#+CAPTION: =hadoop version=
+[[./img/hadoop-version.png]]
+
+#+CAPTION: Successful startup after =hadoop namenode=
+[[./img/hadoop-namenode.png]]
