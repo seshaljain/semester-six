@@ -1,0 +1,105 @@
+#+TITLE: Computer Networks
+#+SUBTITLE: Lab 2
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: January 17, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436
+
+* Networking Commands in Linux
+There are several Linux packages to deal with network-related commands, eg
+=net-tools=, =iproute2= etc. Since =net-tools= is deprecated, many of its
+commands now have =iproute2= alternatives.
+
+** Ping
+ping (Packet INternet Groper) is a utility normally used for testing connectivity between two systems on a network
+(Local Area Network (LAN) or Wide Area Network (WAN)). It uses ICMP (Internet Control Message Protocol) to
+communicate to nodes on a network.
+
+#+begin_example
+~/D/M/S/A/computer-networks/lab2-01-17 [main] λ ping google.com
+PING google.com(bom12s17-in-x0e.1e100.net (2404:6800:4009:82a::200e)) 56 data bytes
+64 bytes from bom12s17-in-x0e.1e100.net (2404:6800:4009:82a::200e): icmp_seq=1 ttl=118 time=29.9 ms
+64 bytes from bom12s17-in-x0e.1e100.net (2404:6800:4009:82a::200e): icmp_seq=2 ttl=118 time=28.8 ms
+64 bytes from bom12s17-in-x0e.1e100.net (2404:6800:4009:82a::200e): icmp_seq=3 ttl=118 time=31.5 ms
+64 bytes from bom12s17-in-x0e.1e100.net (2404:6800:4009:82a::200e): icmp_seq=4 ttl=118 time=26.5 ms
+64 bytes from bom12s17-in-x0e.1e100.net (2404:6800:4009:82a::200e): icmp_seq=5 ttl=118 time=26.8 ms
+
+--- google.com ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4007ms
+rtt min/avg/max/mdev = 26.542/28.703/31.521/1.892 ms
+#+end_example
+** IP Addresses
+=ip address show= can list the IP address and other networking interfaces
+available on the machine.
+#+begin_example
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eno1: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN group default qlen 1000
+    link/ether f8:ca:b8:59:6f:8a brd ff:ff:ff:ff:ff:ff
+    altname enp0s25
+3: wlp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 10:02:b5:6d:41:ab brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.243/24 brd 192.168.1.255 scope global dynamic noprefixroute wlp2s0
+       valid_lft 1966sec preferred_lft 1966sec
+    inet6 2405:201:300c:306d:ac6c:3882:2155:b727/64 scope global dynamic noprefixroute 
+       valid_lft 3581sec preferred_lft 3581sec
+    inet6 fe80::27b9:d541:caa6:cf44/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+#+end_example
+
+In this case, the IP address of my machine, through the ~wlp2s0~ interface is =192.168.1.243=.
+** netstat
+netstat is a command-line tool that displays useful information such as network connections, routing tables, interface
+statistics, and much more, concerning the Linux networking subsystem. It is useful for network troubleshooting and
+performance analysis.
+=netstat -all=
+#+begin_example
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        0      0 localhost:ipps          0.0.0.0:*               LISTEN
+tcp        0      0 blu:53062               52.114.15.111:https     ESTABLISHED
+tcp        0      0 blu:50510               20.190.145.169:https    ESTABLISHED
+tcp        0      0 blu:45806               ec2-35-86-38-2.us:https ESTABLISHED
+tcp        0      0 blu:50508               20.190.145.169:https    ESTABLISHED
+tcp        0      0 blu:40470               20.190.146.34:https     ESTABLISHED
+#+end_example
+** ss
+ss (socket statistics) is a powerful command-line utility to investigate sockets. It dumps socket statistics and displays
+information similar to netstat. In addition, it shows more TCP and state information compared to other similar
+utilities.
+=ss -t=
+#+begin_example
+State      Recv-Q Send-Q                            Local Address:Port                              Peer Address:Port Process
+LISTEN     0      128                                   127.0.0.1:ipp                                    0.0.0.0:*
+ESTAB      0      0                                 192.168.1.243:45806                               35.86.38.2:https
+ESTAB      0      0                                 192.168.1.243:41298                            52.114.36.199:https
+CLOSE-WAIT 1      0                                 192.168.1.243:54510                           34.117.237.239:https
+...
+#+end_example
+** nmap
+=nmap= (Network Mapper) is a powerful and extremely versatile tool for Linux system/network administrators. It is
+used to gather information about a single host or explores networks an entire network. Nmap is also used to perform
+security scans, network audits and finding open ports on remote hosts and so much more.
+
+=sudo nmap 192.168.1.243/24=
+#+begin_example
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-01-20 14:55 IST
+Nmap scan report for reliance.reliance (192.168.1.1)
+Host is up (0.012s latency).
+MAC Address: A8:DA:0C:E2:59:BB (Servercom (india) Private Limited)
+Nmap scan report for 192.168.1.29
+Host is up.
+MAC Address: 88:11:96:FF:85:6D (Huawei Technologies)
+Nmap scan report for 192.168.1.127
+Host is up (0.74s latency).
+MAC Address: 22:9E:89:25:05:CB (Unknown)
+Nmap scan report for 192.168.1.243
+Host is up.
+Nmap done: 256 IP addresses (4 hosts up) scanned in 6.81 seconds
+#+end_example
