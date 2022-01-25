@@ -1,0 +1,37 @@
+#+TITLE: Data Warehousing & Mining Lab
+#+SUBTITLE: Lab 2
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: January 19, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436_CSE_3_ASSIGNMENT_2
+
+* Mapping MANIT 2020 Data with Google Fusion Tables and ArcGIS
+Google Fusion Tables is an experimental data visualization web application to gather, visualize, and share data tables.
+
+Map data can be exported, and used in ArcGIS Cloud. \\
+Data was provided in CSV format: \\
+https://gist.github.com/seshaljain/6cb5a953912e414113a0f58b2e9d7cb1
+
+** Importing data into ArcGIS
+#+CAPTION: Import Fusion Table CSV to ArcGIS
+[[./images/import-csv.png]]
+
+#+CAPTION: Creating Map on ArcGIS from CSV
+[[./images/create-layer.png]]
+
+* Performing operations on ArcGIS
+#+CAPTION: Uploaded data on ArcGIS
+[[./images/data.png]]
+[[./images/main-gate.png]]
+
+#+CAPTION: Freehand selection of data points
+[[./images/freehand.png]]
+
+#+CAPTION: Spacial Filter on data
+[[./images/spatial-filter.png]]
+
+* Exporting data from ArcGIS
+#+CAPTION: Exporting in ZIP
+[[./images/export.png]]
