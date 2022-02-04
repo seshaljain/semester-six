@@ -1,0 +1,30 @@
+#+TITLE: Hadoop Lab
+#+SUBTITLE: Lab 3
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: January 28, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436
+
+* Hadoop initialization
+We can check if Hadoop has been installed correctly by running the =start-all= script which creates namenodes and datanodes
+
+#+CAPTION: Executing start-all.sh
+[[./img/start-all.png]]
+* Creating directory
+We use Hadoop's =fs= utility to create a directory on =hdfs=
+
+#+CAPTION: Running mkdir with /user/temp
+[[./img/mkdir.png]]
+* Creating and copying file to HDFS
+Running =fs= with =-copyFromLocal= copies data from local filesystem to HDFS on Hadoop cluster
+
+[[./img/copyFromLocal.png]]
+
+* Copying file from HDFS to local filesystem
+Running =fs= with =-copyToLocal= copies data from Hadoop cluster to local filesystem
+
+[[./img/copyToLocal.png]]
+
+Comparing =md5= hashes of the two files proves that they are identical
