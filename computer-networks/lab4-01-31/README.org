@@ -1,0 +1,104 @@
+#+TITLE: Computer Networks
+#+SUBTITLE: Lab 4
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: January 31, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436
+
+* Implementing Socket Program Implementing Client-Server Chat
+We can use =serverline=, a third party util library to maintain linewise positions across client and server.
+
+=server.js=
+#+begin_src js :tangle chat/server.js
+const net = require("net");
+const serverline = require("serverline");
+
+const server = net
+  .createServer((connection) => {
+    console.log("[+] Client connected");
+    connection.on("data", (buf) =>
+      console.log("[>] Client: " + buf.toString())
+    );
+
+    serverline.init("> ").on("line", (line) => connection.write(line));
+
+    connection.on("end", () => console.log("[+] Client disconnected\n"));
+    connection.on("error", (err) => console.log("[X] ", err.message));
+  })
+  .listen(3000, () => console.log("[$] Server listening on port 3000"));
+#+end_src
+
+=client.js=
+#+begin_src js :tangle chat/client.js
+const net = require("net");
+const serverline = require("serverline");
+
+const connection = net.createConnection({ port: 3000 }, () => {
+  console.log("[+] Server connected");
+  connection.on("data", (buf) => console.log("[>] Server: " + buf.toString()));
+  connection.on("error", (err) => console.log("[-] ", err.message));
+
+  const sl = serverline.init({ prompt: "> " });
+  sl.on("line", (line) => {
+    connection.write(line);
+    line === "exit" && connection.destroy() ? process.exit(0) : null;
+  });
+});
+#+end_src
+
+[[./img/chat.png]]
+
+* Implementing Socket Program Implementing Client-Server File Transfer
+Input file: \\
+=input.txt=
+#+begin_example
+Hello world!
+This is an input file.
+Send to client. From server.
+Beep beep boop boop.
+#+end_example
+
+=server.js=
+#+begin_src js :tangle file-transfer/server.js
+const net = require("net");
+
+const server = net
+  .createServer((connection) => {
+    console.log("[+] Client connected");
+
+    const reader = require("fs").createReadStream("./input.txt");
+
+    reader.on("readable", () => {
+      while ((data = reader.read())) {
+        connection.write(data);
+      }
+    });
+
+    reader.on("end", () => {
+      connection.end();
+    });
+
+    connection.on("end", () => console.log("[+] Client disconnected\n"));
+    connection.on("error", (err) => console.log("[X] ", err.message));
+  })
+  .listen(3000, () => console.log("[$] Server listening on port 3000"));
+#+end_src
+
+=client.js=
+#+begin_src js :tangle file-transfer/client.js
+const net = require("net");
+
+const connection = net.createConnection({ port: 3000 }, () => {
+  console.log("[+] Server connected");
+
+  const writer = require("fs").createWriteStream("./output.txt");
+  connection.on("data", (buf) => writer.write(buf));
+
+  connection.on("error", (err) => console.log("[-] ", err.message));
+  connection.on("end", () => console.log("[+] File transfer complete"));
+});
+#+end_src
+
+[[./img/file-transfer.png]]

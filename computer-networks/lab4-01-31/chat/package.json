@@ -1,0 +1,15 @@
+{
+  "name": "lab4-01-31",
+  "version": "1.0.0",
+  "description": "* Implementing Socket Program Implementing Client-Server Chat",
+  "main": "client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Seshal Jain",
+  "license": "ISC",
+  "dependencies": {
+    "serverline": "^1.5.0"
+  }
+}
