@@ -1,0 +1,88 @@
+#+TITLE: Data Warehousing & Mining Lab
+#+SUBTITLE: Lab 3
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: February 02, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436_CSE_3_ASSIGNMENT_3
+
+* Harr Wavelet Transform
+Write a program to perform data reduction using wavelet (Haar) transformation on input given by user. Also extend
+same program to perform inverse wavelet transform.
+a. First take input from user
+b. Apply wavelet transform
+c. Print transformed data
+d. Ask user to decide threshold
+e. Apply inverse wavelet transform
+f. Plot original data, transformed data and reconstructed data on same plot to observe the changes
+Make this program in generalized way that it will take input of variable size.
+
+* Code
+#+begin_src python
+from math import ceil, log2
+from tabulate import tabulate
+import matplotlib.pyplot as plt
+
+arr = list(map(float, input("Enter array: ").strip().split()))
+#+end_src
+
+#+begin_example
+Enter array: 8 9 5 7 5 5 6 3 6 5 5 6 4 3 2 4
+#+end_example
+
+#+begin_src python
+num = len(arr)
+
+mat = [[0.0 for x in range(num)] for y in range(1 + ceil(log2(num)))]
+mat[0] = arr
+
+for n in range(ceil(log2(num))):
+    for i in range(num // pow(2, n + 1)):
+        mat[n + 1][i] = (mat[n][2 * i] + mat[n][2 * i + 1]) / 2
+        mat[n + 1][num // 2 ** (n + 1) + i] = (mat[n][2 * i] - mat[n][2 * i + 1]) / 2
+        mat[n + 1][num // 2**n :] = mat[n][num // 2**n :]
+
+print(tabulate(mat))
+#+end_src
+
+#+begin_example
+------  ------  ----  -----  ----  ----  ---  ----  ----  --  -  ---  ---  ----  ---  --
+8       9       5     7      5     5     6    3      6     5  5  6    4     3    2     4
+8.5     6       5     4.5    5.5   5.5   3.5  3     -0.5  -1  0  1.5  0.5  -0.5  0.5  -1
+7.25    4.75    5.5   3.25   1.25  0.25  0    0.25  -0.5  -1  0  1.5  0.5  -0.5  0.5  -1
+6       4.375   1.25  1.125  1.25  0.25  0    0.25  -0.5  -1  0  1.5  0.5  -0.5  0.5  -1
+5.1875  0.8125  1.25  1.125  1.25  0.25  0    0.25  -0.5  -1  0  1.5  0.5  -0.5  0.5  -1
+------  ------  ----  -----  ----  ----  ---  ----  ----  --  -  ---  ---  ----  ---  --
+#+end_example
+
+#+begin_src python
+harr = [[0.0 for x in range(num)] for y in range(1 + ceil(log2(num)))]
+harr[-1] = mat[-1].copy()
+
+thresh = float(input("Enter threshold: "))
+#+end_src
+
+#+begin_example
+Enter threshold: 3
+#+end_example
+
+#+begin_example
+------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------
+5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875
+5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  5.1875  0       0       0       0       0       0       0       0
+5.1875  5.1875  5.1875  5.1875  0       0       0       0       0       0       0       0       0       0       0       0
+5.1875  5.1875  0       0       0       0       0       0       0       0       0       0       0       0       0       0
+5.1875  0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------
+#+end_example
+
+#+begin_src python
+plt.plot(arr)
+plt.plot(harr[0], label="")
+plt.title("Signal Plot")
+plt.legend(["Original signal", "Transformed Signal"], loc="lower right")
+plt.show()
+#+end_src
+
+[[./images/graph.png]]

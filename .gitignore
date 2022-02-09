@@ -6,6 +6,7 @@
 *
 !Dockerfile
 !*.*
+*.lock
 !*/
 
 # Node.js
@@ -28,6 +29,8 @@ node_modules
 # Python #
 ##########
 *.py
+.ipynb_checkpoints
+*.ipynb
 
 #######
 # TeX #
