@@ -1,0 +1,121 @@
+#+TITLE: Hadoop Lab
+#+SUBTITLE: Lab 2
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: January 21, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436
+
+* Setting up a multi-node Hadoop cluster
+Hadoop requires multiple machines for a multi-node cluster setup. However, we can simulate this using multiple virtual machines.
+Steps to install:
+1. Create master VM \\
+   =hadoop-master=
+2. Install Hadoop dependencies \\
+   Install =openjdk-8-jdk=, =ssh= \\
+   Make sure to setup SSH and login to localhost.
+3. Install Hadoop to =/usr/local/hadoop/=
+4. Create a new user =hadoop= \\
+   Add it to =hadoop= group, give it root permissions to =$HADOOP_HOME= directory and add it to =sudo= group.
+5. Clone the master VM
+   Make 2 clones: =hadoop-slave-1=, =hadoop-slave-2=
+6. Get the IP address of the three machines and add them to /etc/hosts file:
+   #+begin_example
+192.168.56.101 hadoop-master
+192.168.56.102 hadoop-slave-1
+192.168.56.103 hadoop-slave-2
+   #+end_example
+7. Edit the =hostname= of all virtual machines to match with the =hosts= file \\
+   Make sure to reboot for the changes to take effect
+8. On the master VM, switch to user =hadoop=
+   #+begin_example
+sudo su - hadoop
+   #+end_example
+   1. Generate SSH key, and copy to all VMs
+      #+begin_example
+   ssh-copy-id hadoop@hadoop-master
+   ssh-copy-id hadoop@hadoop-slave-1
+   ssh-copy-id hadoop@hadoop-slave-2
+      #+end_example
+   2. Edit core-site config \\
+      In =/usr/local/hadoop/etc/hadoop/core-site.xml=
+      #+begin_example
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://hadoop-master:9000</value>
+    </property>
+</configuration>
+      #+end_example
+   3. Edit hdfs-site config \\
+      In =/usr/local/hadoop/etc/hadoop/hdfs-site.xml=
+      #+begin_example
+<configuration>
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>/usr/local/hadoop/data/nameNode</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>/usr/local/hadoop/data/dataNode</value>
+    </property>
+    <property>
+        <name>dfs.replication</name>
+        <value>2</value>
+    </property>
+</configuration>
+      #+end_example
+   4. Edit workers file
+      Add slaves in =/usr/local/hadoop/etc/hadoop/workers=
+      #+begin_example
+hadoop-slave-1
+hadoop-slave-2
+      #+end_example
+   5. Copy this config to slaves
+      #+begin_example
+scp /usr/local/hadoop/etc/hadoop/* hadoop-slave-1:/usr/local/hadoop/etc/hadoop/
+scp /usr/local/hadoop/etc/hadoop/* hadoop-slave-2:/usr/local/hadoop/etc/hadoop/
+      #+end_example
+   6. Format namenode
+      #+begin_example
+hdfs namenode -format
+      #+end_example
+   7. Start HDFS
+      #+begin_example
+start-all.sh
+      #+end_example
+   8. Configure YARN \\
+      Set environment variables
+      #+begin_example
+export HADOOP_HOME="/usr/local/hadoop"
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+      #+end_example
+9. On all slaves, edit YARN config \\
+   =/usr/local/hadoop/etc/hadoop/yarn-site.xml=
+   #+begin_example
+<property>
+    <name>yarn.resourcemanager.hostname</name>
+    <value>hadoop-master</value>
+</property>
+   #+end_example
+10. Back on master, start YARN
+    #+begin_example
+start-yarn.sh
+    #+end_example
+
+* Screenshots
+#+CAPTION: Start DFS, YARN
+[[./img/start.png]]
+#+CAPTION: NameNode Dashboard
+[[./img/namenode.png]]
+#+CAPTION: YARN Dashboard
+[[./img/yarn.png]]
+#+CAPTION: Slave 1
+[[./img/slave-1.png]]
+#+CAPTION: Slave 2
+[[./img/slave-2.png]]
