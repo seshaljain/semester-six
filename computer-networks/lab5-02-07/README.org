@@ -1,0 +1,66 @@
+#+TITLE: Computer Networks
+#+SUBTITLE: Lab 5
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: February 07, 2022
+#+LATEX_CLASS: assignment
+#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
+#+EXPORT_FILE_NAME: 191112436
+
+* Implementing Client-Server Command Shell
+We can use =serverline=, a third party util library to maintain linewise positions across client and server. \\
+NodeJS environment setup
+#+begin_src sh
+npm install serverline
+#+end_src
+
+=server.js=
+#+begin_src js :tangle server.js
+const { exec } = require("child_process");
+const net = require("net");
+const serverline = require("serverline");
+
+const server = net
+  .createServer((connection) => {
+    console.log("[+] Client connected");
+    connection.on("data", (buf) =>
+      exec(buf.toString(), (err, stdout, stderr) => {
+        if (err) {
+          connection.write("[>] Command not found.\n");
+          console.log("[-] ", err.message);
+          return;
+        }
+        if (stderr) {
+          connection.write("[>] Error: " + stderr);
+          return;
+        }
+        connection.write("[>] " + stdout);
+      })
+    );
+
+    connection.on("end", () => console.log("[+] Client disconnected\n"));
+    connection.on("error", (err) => console.log("[X] ", err.message));
+  })
+  .listen(3000, () => console.log("[$] Server listening on port 3000"));
+#+end_src
+
+=client.js=
+#+begin_src js :tangle client.js
+const net = require("net");
+const sl = require("serverline");
+sl.init({ prompt: "> " });
+
+const connection = net.createConnection({ port: 3000 }, () => {
+  console.log("[+] Server connected");
+
+  connection.on("data", (buf) => console.log(buf.toString()));
+  connection.on("error", (err) => console.log("[-] ", err.message));
+
+  sl.on("line", (line) => {
+    connection.write(line);
+    line === "exit" && connection.destroy() ? process.exit(0) : null;
+  });
+});
+#+end_src
+
+[[./img/remote-shell.png]]
