@@ -1,0 +1,312 @@
+#+TITLE: Data Warehousing & Mining Lab
+#+SUBTITLE: Lab 4
+#+AUTHOR: Seshal Jain
+#+OPTIONS: num:nil toc:nil ^:nil
+#+DATE: February 09, 2022
+#+LATEX_CLASS: assignment
+#+EXPORT_FILE_NAME: 191112436_CSE_3_ASSIGNMENT_4
+
+* Titanic Dataset
+#+begin_src jupyter-python :session py :exports both
+import pandas as pd
+import numpy as np
+from scipy.stats.distributions import chi2
+import matplotlib.pyplot as plt
+import seaborn as sns
+#+END_SRC
+
+#+RESULTS:
+
+#+begin_src jupyter-python :session py :exports both
+titanic_df = pd.read_excel('titanic.xls')
+titanic_df.describe()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+            pclass     survived          age        sibsp        parch  \
+count  1309.000000  1309.000000  1046.000000  1309.000000  1309.000000
+mean      2.294882     0.381971    29.881135     0.498854     0.385027
+std       0.837836     0.486055    14.413500     1.041658     0.865560
+min       1.000000     0.000000     0.166700     0.000000     0.000000
+25%       2.000000     0.000000    21.000000     0.000000     0.000000
+50%       3.000000     0.000000    28.000000     0.000000     0.000000
+75%       3.000000     1.000000    39.000000     1.000000     0.000000
+max       3.000000     1.000000    80.000000     8.000000     9.000000
+
+              fare
+count  1308.000000
+mean     33.295479
+std      51.758668
+min       0.000000
+25%       7.895800
+50%      14.454200
+75%      31.275000
+max     512.329200
+#+end_example
+
+** Counting missing values in each column
+#+begin_src jupyter-python :session py :exports both
+nas = {}
+for series in titanic_df:
+    na = 0
+
+for value in titanic_df[series]:
+    if pd.isnull(value):
+        na += 1
+    nas[series] = na
+null_vals = pd.Series(nas, name="No. of null values")
+#+end_src
+
+#+RESULTS:
+
+** Removing rows with missing values
+#+begin_src jupyter-python :session py :exports both
+titanic_row_null_removed = titanic_df.copy()
+null = []
+
+for row in titanic_df.itertuples():
+    for val in list(row)[1:]:
+        if pd.isnull(val):
+            null.append(row[0])
+            break
+
+for row in null:
+    titanic_row_null_removed.drop(row, inplace=True)
+
+print(
+    "Ratio of original to null-removed dataframe",
+    titanic_row_null_removed.shape[0] / titanic_df.shape[0],
+)
+#+end_src
+
+#+RESULTS:
+: Ratio of original to null-removed dataframe 0.7967914438502673
+** Removing columns with missing values
+#+begin_src jupyter-python :session py :exports both
+titanic_col_null_removed = titanic_df.copy()
+null = []
+
+for col in titanic_df.columns:
+    for val in titanic_df[col].tolist():
+        if pd.isnull(val):
+            null.append(col)
+            break
+
+for col in null:
+    titanic_col_null_removed.drop(col, axis=1, inplace=True)
+
+print(
+    "Ratio of original to null-removed dataframe",
+    titanic_col_null_removed.shape[1] / titanic_df.shape[1],
+)
+#+end_src
+
+#+RESULTS:
+: Ratio of original to null-removed dataframe 0.7
+** Replacing missing values with mean
+#+begin_src jupyter-python :session py :exports both
+titanic_df["mean_filled_age"] = titanic_df["age"].fillna(titanic_df["age"].mean())
+
+titanic_df.describe()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+            pclass     survived          age        sibsp        parch  \
+count  1309.000000  1309.000000  1046.000000  1309.000000  1309.000000
+mean      2.294882     0.381971    29.881135     0.498854     0.385027
+std       0.837836     0.486055    14.413500     1.041658     0.865560
+min       1.000000     0.000000     0.166700     0.000000     0.000000
+25%       2.000000     0.000000    21.000000     0.000000     0.000000
+50%       3.000000     0.000000    28.000000     0.000000     0.000000
+75%       3.000000     1.000000    39.000000     1.000000     0.000000
+max       3.000000     1.000000    80.000000     8.000000     9.000000
+
+              fare  mean_filled_age
+count  1308.000000      1309.000000
+mean     33.295479        29.881135
+std      51.758668        12.883199
+min       0.000000         0.166700
+25%       7.895800        22.000000
+50%      14.454200        29.881135
+75%      31.275000        35.000000
+max     512.329200        80.000000
+#+end_example
+** Replacing missing values with median
+#+begin_src jupyter-python :session py :exports both
+titanic_df["median_filled_age"] = titanic_df["age"].fillna(titanic_df["age"].median())
+
+titanic_df.describe()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+            pclass     survived          age        sibsp        parch  \
+count  1309.000000  1309.000000  1046.000000  1309.000000  1309.000000
+mean      2.294882     0.381971    29.881135     0.498854     0.385027
+std       0.837836     0.486055    14.413500     1.041658     0.865560
+min       1.000000     0.000000     0.166700     0.000000     0.000000
+25%       2.000000     0.000000    21.000000     0.000000     0.000000
+50%       3.000000     0.000000    28.000000     0.000000     0.000000
+75%       3.000000     1.000000    39.000000     1.000000     0.000000
+max       3.000000     1.000000    80.000000     8.000000     9.000000
+
+              fare  mean_filled_age  median_filled_age
+count  1308.000000      1309.000000        1309.000000
+mean     33.295479        29.881135          29.503183
+std      51.758668        12.883199          12.905246
+min       0.000000         0.166700           0.166700
+25%       7.895800        22.000000          22.000000
+50%      14.454200        29.881135          28.000000
+75%      31.275000        35.000000          35.000000
+max     512.329200        80.000000          80.000000
+#+end_example
+* Transformation using Binning
+** Equal width bins using mean
+=K = 25=
+#+begin_src jupyter-python :session py :exports both
+def binning_equal_width(series, k):
+    w = (max(series) - min(series)) / k
+    bins = [min(series) + i * w for i in range(k + 1)]
+    ret = []
+
+    for i in range(0, k):
+        curr = []
+        for j in series:
+            if j >= bins[i] and j <= bins[i + 1]:
+                curr.append(j)
+        ret += [np.mean(curr)] * len(curr)
+    return ret
+#+end_src
+
+#+RESULTS:
+
+** Equal frequency bins using mean
+=K = 100=
+#+begin_src jupyter-python :session py :exports both
+def binning_equal_frequency(series, size):
+    while len(series) % size != 0:
+        series.append(0)
+    series = sorted(series)
+    ret = []
+    for i in range(0, len(series), size):
+        ret += [np.mean(series[i : i + size])] * size
+    return ret
+#+end_src
+
+#+RESULTS:
+
+** Plotting bins
+#+begin_src jupyter-python :session py :exports both
+def binning(series):
+    equalWidth = binning_equal_width(series, 25)
+    equalFrequency = binning_equal_frequency(series, 100)
+
+    _, axs = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+    axs[0].plot(series, label="Original Age", color="green")
+    axs[0].set_title("Original Age")
+    axs[1].plot(equalWidth, label="Equal Width Binning", color="cyan")
+    axs[1].set_title("Equal Width Binning")
+    axs[2].plot(equalFrequency, label="Equal Frequency Binning", color="blue")
+    axs[2].set_title("Equal Frequency Binning")
+    plt.show()
+
+
+binning(titanic_df["median_filled_age"].tolist())
+#+end_src
+
+#+RESULTS:
+[[file:./.ob-jupyter/0ad2a2a4ef430336b058141962b0ba518fbf87a5.png]]
+* Performing Chi-Square Test
+#+begin_src jupyter-python :session py :exports both
+def chi_square(x, y):
+    x = x.fillna(x.mode()[0])
+    y = y.fillna(y.mode()[0])
+
+    table = {}
+    for i in range(len(x)):
+        if x[i] in table:
+            if y[i] in table[x[i]]:
+                table[x[i]][y[i]] += 1
+            else:
+                table[x[i]][y[i]] = 1
+        else:
+            table[x[i]] = {}
+            table[x[i]][y[i]] = 1
+    df = pd.DataFrame(table)
+    df["Sum(row)"] = df.sum(axis=1)
+    df.loc["Sum(col)"] = df.sum()
+    df.columns.name = x.name
+    df.index.name = y.name
+
+    df_exp = df.copy()
+
+    for i in range(len(df.columns) - 1):
+        df_exp.iloc[i, :-1] = (
+            df_exp.iloc[-1, :-1] * df_exp.iloc[i, -1] / df_exp.iloc[-1, -1]
+        )
+
+    # Plot everything
+    plt.figure(figsize=(10, 4))
+    plt.subplot(1, 2, 1)
+    sns.heatmap(df.iloc[:-1, :-1], annot=True, fmt="d")
+    plt.title("Contingency Table")
+    plt.subplot(1, 2, 2)
+    sns.heatmap(df_exp.iloc[:-1, :-1], annot=True, fmt="g")
+    plt.title("Expected Value Table")
+    plt.tight_layout()
+    plt.show()
+
+    chi_sq = np.sum(
+        np.sum(
+            ((df.iloc[:-1, :-1] - df_exp.iloc[:-1, :-1]) ** 2 / df_exp.iloc[:-1, :-1])
+        )
+    )
+    rows = x.unique()
+    cols = y.unique()
+    dof = (len(rows) - 1) * (len(cols) - 1)
+    p = chi2.sf(chi_sq, dof)
+    print("chi-square value:", chi_sq)
+    print("Degree of freedom:", dof)
+    print("p-value:", p)
+#+end_src
+
+#+RESULTS:
+
+** p-class & survived
+#+begin_src jupyter-python :session py :exports both
+chi_square(titanic_df['pclass'], titanic_df['survived'])
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+[[file:./.ob-jupyter/85b465a7dd002c35ca2f2fd068c207993121b2c6.png]]
+: chi-square value: 127.85915643930326
+: Degree of freedom: 2
+: p-value: 1.7208259588256175e-28
+:END:
+** p-class & sex
+#+begin_src jupyter-python :session py :exports both
+chi_square(titanic_df['pclass'], titanic_df['sex'])
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+[[file:./.ob-jupyter/3f70a45b8a6966d112049adde28a76dd6dd24efc.png]]
+: chi-square value: 20.378781205085584
+: Degree of freedom: 2
+: p-value: 3.7566772719164106e-05
+:END:
+** p-class & embarked
+#+begin_src jupyter-python :session py :exports both
+chi_square(titanic_df['pclass'], titanic_df['embarked'])
+#+end_src
+
+#+RESULTS:
+:RESULTS:
+[[file:./.ob-jupyter/9436eb4736bcffdc61892154a4eab67a8f7fab91.png]]
+: chi-square value: 204.48431967559742
+: Degree of freedom: 4
+: p-value: 4.0799162291284984e-43
+:END:
