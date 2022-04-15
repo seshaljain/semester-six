@@ -30,6 +30,7 @@ node_modules
 ##########
 *.py
 .ipynb_checkpoints
+.ob-jupyter
 *.ipynb
 
 #######
