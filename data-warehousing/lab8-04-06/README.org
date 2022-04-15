@@ -1,0 +1,355 @@
+#+TITLE: Data Warehousing & Mining Lab
+#+SUBTITLE: Lab 8
+#+AUTHOR: Seshal Jain
+#+OPTIONS: toc:nil ^:nil
+#+DATE: April 06, 2022
+#+LATEX_CLASS: assignment
+#+PROPERTY: header-args:emacs-lisp
+#+EXPORT_FILE_NAME: 191112436_CSE_3_ASSIGNMENT_8
+
+* Decision Tree Classifier
+:PROPERTIES:
+:TABLE_EXPORT_FILE: dataset.csv
+:TABLE_EXPORT_FORMAT: orgtbl-to-csv
+:END:
+#+CAPTION: Given dataset
+| RID | age         | income | student | credit_rating | buy_computers |
+|-----+-------------+--------+---------+---------------+---------------|
+|   1 | youth       | high   | no      | fair          | no            |
+|   2 | youth       | high   | no      | fair          | yes           |
+|   3 | middle_aged | high   | no      | fair          | yes           |
+|   4 | senior      | medium | no      | fair          | yes           |
+|   5 | senior      | low    | yes     | fair          | yes           |
+|   6 | senior      | low    | yes     | excellent     | no            |
+|   7 | middle_aged | low    | yes     | excellent     | yes           |
+|   8 | youth       | medium | no      | fair          | no            |
+|   9 | youth       | low    | yes     | fair          | yes           |
+|  10 | senior      | medium | yes     | fair          | yes           |
+|  11 | youth       | medium | yes     | excellent     | yes           |
+|  12 | middle_aged | medium | no      | excellent     | yes           |
+|  13 | middle_aged | high   | yes     | fair          | yes           |
+|  14 | senior      | medium | no      | excelent      | no            |
+
+** =ID3= Algorithm
+#+begin_src python :tangle id3.py :results output pp :exports both
+import pandas as pd
+import math
+import numpy as np
+from tabulate import tabulate
+
+target_variable = "buy_computers"
+data = pd.read_csv("dataset.csv")
+features = [feat for feat in data]
+features.remove(target_variable)
+
+
+class Node:
+    def __init__(self):
+        self.children = []
+        self.value = ""
+        self.isLeaf = False
+        self.pred = ""
+
+
+def entropy(dataset):
+    pos = 0.0
+    neg = 0.0
+    for _, row in dataset.iterrows():
+        if row[target_variable] == "yes":
+            pos += 1
+        else:
+            neg += 1
+    if pos == 0.0 or neg == 0.0:
+        return 0.0
+    else:
+        p = pos / (pos + neg)
+        n = neg / (pos + neg)
+        return -(p * math.log(p, 2) + n * math.log(n, 2))
+
+
+def info_gain(dataset, attr):
+    uniq = np.unique(dataset[attr])
+    gain = entropy(dataset)
+    for u in uniq:
+        subdata = dataset[dataset[attr] == u]
+        sub_e = entropy(subdata)
+        gain -= (float(len(subdata)) / float(len(dataset))) * sub_e
+    return gain
+
+
+def ID3(dataset, attrs):
+    root = Node()
+    table_gain = [[]]
+    max_gain = 0
+    max_feat = ""
+    for feature in attrs:
+        gain = info_gain(dataset, feature)
+        table_gain.append([feature, gain])
+        if gain > max_gain:
+            max_gain = gain
+            max_feat = feature
+    root.value = max_feat
+    uniq = np.unique(dataset[max_feat])
+
+    print(tabulate(table_gain, headers=["Parameter", "Info Gain"], tablefmt="github"))
+
+    print("Choosing parameter", max_feat, "\n")
+
+    for u in uniq:
+        subdata = dataset[dataset[max_feat] == u]
+        if entropy(subdata) == 0.0:
+            newNode = Node()
+            newNode.isLeaf = True
+            newNode.value = u
+            newNode.pred = np.unique(subdata[target_variable])[0]
+            root.children.append(newNode)
+        else:
+            dummyNode = Node()
+            dummyNode.value = u
+            new_attrs = attrs.copy()
+            new_attrs.remove(max_feat)
+            child = ID3(subdata, new_attrs)
+            dummyNode.children.append(child)
+            root.children.append(dummyNode)
+    return root
+
+
+def printTree(root: Node, depth=0):
+    for i in range(depth - 1):
+        print("|    ", end="")
+    if depth > 0:
+        print("|----", end="", sep="")
+    print(root.value, end=" ")
+    if root.isLeaf:
+        print("->", root.pred, end="")
+    print()
+    for child in root.children:
+        printTree(child, depth + 1)
+
+
+def predict(root: Node, tuple: dict):
+    for child in root.children:
+        if child.value == tuple[root.value]:
+            if child.isLeaf:
+                print("Predicted value is: ", child.pred)
+            else:
+                predict(child.children[0], tuple)
+                break
+
+
+root = ID3(data, features)
+printTree(root)
+
+params = {"age": "youth", "income": "low", "student": "no", "credit": "excellent"}
+
+print("\n\nPredicting for")
+print(params)
+predict(root, params)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+| Parameter     |   Info Gain |
+|---------------|-------------|
+|               |             |
+| age           |   0.24675   |
+| income        |   0.0292226 |
+| student       |   0.151836  |
+| credit_rating |   0.048127  |
+Choosing parameter age
+
+| Parameter     |   Info Gain |
+|---------------|-------------|
+|               |             |
+| income        |   0.0199731 |
+| student       |   0.0199731 |
+| credit_rating |   0.970951  |
+Choosing parameter credit_rating
+
+| Parameter     |   Info Gain |
+|---------------|-------------|
+|               |             |
+| income        |   0.570951  |
+| student       |   0.970951  |
+| credit_rating |   0.0199731 |
+Choosing parameter student
+
+age
+|----middle_aged -> yes
+|----senior
+|    |----credit_rating
+|    |    |----excellent -> no
+|    |    |----fair -> yes
+|----youth
+|    |----student
+|    |    |----no -> no
+|    |    |----yes -> yes
+
+
+Predicting for
+{'age': 'youth', 'income': 'low', 'student': 'no', 'credit': 'excellent'}
+Predicted value is:  no
+#+end_example
+** =C4.5= Algorithm
+#+begin_src python :tangle c45.py :results output pp :exports both
+import pandas as pd
+import math
+import numpy as np
+from tabulate import tabulate
+
+target_variable = "buy_computers"
+data = pd.read_csv("dataset.csv")
+features = [feat for feat in data]
+features.remove(target_variable)
+
+
+class Node:
+    def __init__(self):
+        self.children = []
+        self.value = ""
+        self.isLeaf = False
+        self.pred = ""
+
+
+def entropy(dataset):
+    pos = 0.0
+    neg = 0.0
+    for _, row in dataset.iterrows():
+        if row[target_variable] == "yes":
+            pos += 1
+        else:
+            neg += 1
+    if pos == 0.0 or neg == 0.0:
+        return 0.0
+    else:
+        p = pos / (pos + neg)
+        n = neg / (pos + neg)
+        return -(p * math.log(p, 2) + n * math.log(n, 2))
+
+
+def gain_ratio(dataset, attr):
+    uniq = np.unique(dataset[attr])
+    gain = entropy(dataset)
+    s_info = 0.0
+    for u in uniq:
+        subdata = dataset[dataset[attr] == u]
+        sub_e = entropy(subdata)
+        val = float(len(subdata)) / float(len(dataset))
+        gain -= val * sub_e
+        s_info -= val * math.log(val, 2)
+    return gain / s_info
+
+
+def C45(dataset, attrs):
+    root = Node()
+    table_gain = [[]]
+    max_gain = 0
+    max_feat = ""
+    for feature in attrs:
+        gain = gain_ratio(dataset, feature)
+        table_gain.append([feature, gain])
+        if gain > max_gain:
+            max_gain = gain
+            max_feat = feature
+    root.value = max_feat
+    uniq = np.unique(dataset[max_feat])
+
+    print(tabulate(table_gain, headers=["Parameter", "Gain Ratio"], tablefmt="github"))
+
+    print("Choosing parameter", max_feat, "\n")
+
+    for u in uniq:
+        subdata = dataset[dataset[max_feat] == u]
+        if entropy(subdata) == 0.0:
+            newNode = Node()
+            newNode.isLeaf = True
+            newNode.value = u
+            newNode.pred = np.unique(subdata[target_variable])[0]
+            root.children.append(newNode)
+        else:
+            dummyNode = Node()
+            dummyNode.value = u
+            new_attrs = attrs.copy()
+            new_attrs.remove(max_feat)
+            child = C45(subdata, new_attrs)
+            dummyNode.children.append(child)
+            root.children.append(dummyNode)
+    return root
+
+
+def printTree(root: Node, depth=0):
+    for i in range(depth - 1):
+        print("|    ", end="")
+    if depth > 0:
+        print("|----", end="", sep="")
+    print(root.value, end=" ")
+    if root.isLeaf:
+        print("->", root.pred, end="")
+    print()
+    for child in root.children:
+        printTree(child, depth + 1)
+
+
+def predict(root: Node, tuple: dict):
+    for child in root.children:
+        if child.value == tuple[root.value]:
+            if child.isLeaf:
+                print("Predicted value is: ", child.pred)
+            else:
+                predict(child.children[0], tuple)
+                break
+
+
+root = C45(data, features)
+printTree(root)
+
+params = {"age": "youth", "income": "low", "student": "no", "credit": "excellent"}
+
+print("\n\nPredicting for")
+print(params)
+predict(root, params)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+| Parameter     |   Gain Ratio |
+|---------------|--------------|
+|               |              |
+| age           |    0.156428  |
+| income        |    0.0187726 |
+| student       |    0.151836  |
+| credit_rating |    0.0488486 |
+Choosing parameter age
+
+| Parameter     |   Gain Ratio |
+|---------------|--------------|
+|               |              |
+| income        |    0.0205707 |
+| student       |    0.0205707 |
+| credit_rating |    1         |
+Choosing parameter credit_rating
+
+| Parameter     |   Gain Ratio |
+|---------------|--------------|
+|               |              |
+| income        |    0.37515   |
+| student       |    1         |
+| credit_rating |    0.0205707 |
+Choosing parameter student
+
+age
+|----middle_aged -> yes
+|----senior
+|    |----credit_rating
+|    |    |----excellent -> no
+|    |    |----fair -> yes
+|----youth
+|    |----student
+|    |    |----no -> no
+|    |    |----yes -> yes
+
+
+Predicting for
+{'age': 'youth', 'income': 'low', 'student': 'no', 'credit': 'excellent'}
+Predicted value is:  no
+#+end_example

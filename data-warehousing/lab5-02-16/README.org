@@ -1,0 +1,141 @@
+#+TITLE: Data Warehousing & Mining Lab
+#+SUBTITLE: Lab 5
+#+AUTHOR: Seshal Jain
+#+OPTIONS: toc:nil ^:nil
+#+DATE: February 16, 2022
+#+LATEX_CLASS: assignment
+#+PROPERTY: header-args:emacs-lisp
+#+EXPORT_FILE_NAME: 191112436_CSE_3_ASSIGNMENT_5
+
+* Titanic Dataset
+#+begin_src jupyter-python :session py
+import pandas as pd
+import math
+#+END_SRC
+
+#+begin_src jupyter-python :session py :exports both
+titanic_df = pd.read_excel('titanic.xls')
+titanic_df.describe()
+#+end_src
+** =singleton= and =width = 10= Histogram
+*** =age=
+#+begin_src jupyter-python :session py :exports both
+max_age = int(titanic_df["age"].max())
+print(max_age)
+titanic_df.hist(column="age", figsize=(16, 8), bins=max_age)
+titanic_df.hist(column="age", figsize=(16, 8), bins=int(max_age / 10))
+#+end_src
+*** =fare=
+#+begin_src jupyter-python :session py :exports both
+max_age = int(titanic_df["fare"].max())
+print(max_age)
+titanic_df.hist(column="fare", figsize=(16, 8), bins=max_age)
+titanic_df.hist(column="fare", figsize=(16, 8), bins=int(max_age / 10))
+#+end_src
+** Data Sampling for Age
+30% Samples
+#+begin_src jupyter-python :session py :exports both
+size_df = titanic_df["age"].size
+size_sample = int(size_df * 0.3)
+#+end_src
+*** Simple Random Sampling with Replacement
+#+begin_src jupyter-python :session py :exports both
+simple_random_with_replacement = titanic_df.sample(
+    n=size_sample, replace=True, axis=0, weights="age"
+)
+
+simple_random_with_replacement
+#+end_src
+
+*** Simple Random Sampling without Replacement
+#+begin_src jupyter-python :session py :exports both
+simple_random_without_replacement = titanic_df.sample(
+    n=size_sample, replace=False, axis=0, weights="age"
+)
+
+simple_random_without_replacement
+#+end_src
+
+*** Stratified Sampling
+#+begin_src jupyter-python :session py :exports both
+stratified_sample = titanic_df.groupby("age", group_keys=False).apply(
+    lambda x: x.sample(min(len(x), 5))
+)
+stratified_sample.describe()
+#+end_src
+
+** Comparing Mean and Standard Deviation of Samples
+#+begin_src jupyter-python :session py :exports both
+def mean_and_sd(df, col, ddof=1):
+    mean = df[col].mean()
+    sd = df[col].std(ddof=ddof)
+    return (mean, sd)
+
+print(f"Dataframe                                       Mean               SD")
+print(f"Stratified Sampling:                        {mean_and_sd(stratified_sample, 'age')}")
+print(f"Simple Random Sampling without Replacement: {mean_and_sd(simple_random_with_replacement, 'age')}")
+print(f"Simple Random Sampling with Replacement:    {mean_and_sd(simple_random_without_replacement, 'age')}")
+print(f"Original Population:                        {mean_and_sd(titanic_df, 'age', 0)}")
+#+end_src
+** Normalization
+*** =minmax= normalization onto =[0, 1]=
+#+begin_src jupyter-python :session py :exports both
+def min_max_normalize(df, col):
+    normalized_df = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
+    return normalized_df
+
+
+age_titanic_df_minmax = min_max_normalize(titanic_df, "age")
+print(age_titanic_df_minmax.describe())
+
+fare_titanic_df_minmax = min_max_normalize(titanic_df, "fare")
+print(fare_titanic_df_minmax.describe())
+#+end_src
+
+*** =z-score= normalization
+#+begin_src jupyter-python :session py :exports both
+def z_score_normalize(df, col):
+    normalized_df = (df[col] - df[col].mean()) / df[col].std(ddof=1)
+    return normalized_df
+
+
+age_titanic_df_zscore = z_score_normalize(titanic_df, "age")
+print(age_titanic_df_zscore.describe())
+
+print("\n")
+
+fare_titanic_df_zscore = z_score_normalize(titanic_df, "fare")
+print(fare_titanic_df_zscore.describe())
+#+end_src
+
+*** Decimal scaling
+#+begin_src jupyter-python :session py :exports both
+def decimal_scaling(df, col):
+    max_val = df[col].max()
+    digits = math.floor(math.log10(max_val)) + 1
+    scaled_df = df[col]/digits
+    return scaled_df
+
+age_titanic_df_decimal = decimal_scaling(titanic_df, 'age')
+print(age_titanic_df_decimal.describe())
+
+print("\n")
+
+fare_titanic_df_decimal = decimal_scaling(titanic_df, 'fare')
+print(fare_titanic_df_decimal.describe())
+#+end_src
+
+*** Comparision between =mean= and =standard deviation= for original and normalized data
+#+begin_src jupyter-python :session py :exports both
+print(f"Dataframe [Fare]               Mean               SD")
+print(f"Original Population (Fare):  {mean_and_sd(titanic_df, 'age', 0)}")
+print(
+    f"Min Max Normalization:       ({fare_titanic_df_minmax.mean()}, {fare_titanic_df_minmax.std(ddof=0)})"
+)
+print(
+    f"Z Score Normalization:       ({fare_titanic_df_zscore.mean()}, {fare_titanic_df_zscore.std(ddof=0)})"
+)
+print(
+    f"Decimal Scaling:             ({fare_titanic_df_decimal.mean()}, {fare_titanic_df_decimal.std(ddof=0)})"
+)
+#+end_src

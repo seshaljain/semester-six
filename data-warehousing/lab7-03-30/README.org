@@ -1,0 +1,31 @@
+#+TITLE: Data Warehousing & Mining Lab
+#+SUBTITLE: Lab 7
+#+AUTHOR: Seshal Jain
+#+OPTIONS: toc:nil ^:nil
+#+DATE: March 30, 2022
+#+LATEX_CLASS: assignment
+#+PROPERTY: header-args:emacs-lisp
+#+EXPORT_FILE_NAME: 191112436_CSE_3_ASSIGNMENT_7
+
+* Analysing Apriori algorithm using =Weka=
+#+CAPTION: Launching Weka 3.6
+[[./images/init.png]]
+[[./images/launch.png]]
+
+#+CAPTION: Loading given dataset
+[[./images/loaded.png]]
+
+\newpage
+
+** Setting parameter values
+#+CAPTION: Case 1: Support = 0.15, Confidence = 0.9
+[[./images/case-1-settings.png]]
+[[./images/case-1-result.png]]
+
+#+CAPTION: Case 2: Support = 0.3, Confidence = 0.8
+[[./images/case-2-settings.png]]
+[[./images/case-2-result.png]]
+
+#+CAPTION: Case 3: Support = 0.4, Confidence = 0.9
+[[./images/case-3-settings.png]]
+[[./images/case-3-result.png]]
