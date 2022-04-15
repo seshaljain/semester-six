@@ -1,0 +1,73 @@
+#+TITLE: Computer Networks
+#+SUBTITLE: Lab 8 \\
+#+SUBTITLE: R/W Operations using Pipes
+#+AUTHOR: Seshal Jain
+#+OPTIONS: ^:nil
+#+DATE: April 04, 2022
+#+LATEX_CLASS: assignment
+#+EXPORT_FILE_NAME: 191112436
+* Program to perform R/W operations using =pipe=
+#+CAPTION: pipe.js
+#+begin_src javascript :tangle pipe.js
+const stream = require("stream");
+
+const s = new stream.Readable();
+const w = new stream.Writable();
+
+s._read = () => { };
+w._write = (chunk, encoding, next) => {
+  console.log("Reading from pipe: ", chunk.toString());
+  next();
+};
+
+s.pipe(w);
+
+const pipeUtil = (...args) => {
+  args.map((arg) => s.push(arg) && console.log("Writing to pipe: ", arg));
+  s.push(null);
+};
+
+pipeUtil("Seshal Jain", "191112436", "lorem ipsum dolor sit amet");
+#+end_src
+** Output
+#+begin_example
+~/D/M/S/A/computer-networks/lab8-04-04 [main] λ node pipe.js
+Writing to pipe:  Seshal Jain
+Writing to pipe:  191112436
+Writing to pipe:  lorem ipsum dolor sit amet
+Reading from pipe:  Seshal Jain
+Reading from pipe:  191112436
+Reading from pipe:  lorem ipsum dolor sit amet
+#+end_example
+* Program to perform R/W operations using =pipe= and =child process=
+#+CAPTION: child.js
+#+begin_src javascript :tangle child.js
+var fs = require('fs')
+
+var readable = fs.createReadStream(null, { fd: 3 })
+
+readable.pipe(process.stdout)
+fs.createWriteStream(null, { fd: 4 }).write('Sending a message back.\n')
+#+end_src
+
+#+CAPTION: parent.js
+#+begin_src javascript :tangle parent.js
+var child_process = require('child_process')
+
+var opts = {
+  stdio: [process.stdin, process.stdout, process.stderr, 'pipe', 'pipe'],
+}
+
+var child = child_process.spawn('node', ['./child.js'], opts)
+child.stdio[3].write('First message.\n', 'utf8')
+child.stdio[3].write('Second message.\n', 'utf8')
+
+child.stdio[4].pipe(process.stdout)
+#+end_src
+** Output
+#+begin_example
+~/D/M/S/A/computer-networks/lab8-04-04 [main] λ node parent.js
+Sending a message back.
+First message.
+Second message.
+#+end_example

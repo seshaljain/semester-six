@@ -1,0 +1,158 @@
+#+TITLE: Computer Networks
+#+SUBTITLE: Lab 7 \\
+#+SUBTITLE: Implementing UDP Client-Server Chat
+#+AUTHOR: Seshal Jain
+#+OPTIONS: ^:nil
+#+DATE: February 21, 2022
+#+LATEX_CLASS: assignment
+#+EXPORT_FILE_NAME: 191112436
+
+* Code
+** =server.js=
+#+begin_src js :tangle server.js
+const dgram = require("dgram"),
+  util = require("util"),
+  port = 3000,
+  clients = [];
+
+let server = dgram.createSocket("udp4", (data, rinfo) => {
+  data = JSON.parse(data);
+  message = new Message(data.type, data.message, rinfo);
+
+  process.stdin.resume();
+
+  process.stdin.removeAllListeners("data");
+  process.stdin.on("data", function (chunk) {
+    let buffer = Buffer.from(
+      `Server => ${chunk.toString().replace(/\n|\n/g, "")} `
+    );
+
+    clients.forEach(function (current) {
+      server.send(buffer, 0, buffer.length, current.port, current.address);
+    });
+  });
+});
+
+server.bind(port, function () {
+  console.log("Server listening on port", port);
+});
+
+function Message(type, message, rinfo) {
+  let self = this;
+  this.type = type;
+  this.message = message;
+  this.rinfo = rinfo;
+
+  this.typeConnect = function () {
+    let _message = util.format("New connection on port", this.rinfo.port);
+    clients.push(rinfo);
+    this.broadcast(_message);
+    console.log(_message);
+  };
+
+  this.typeDisconnect = function () {
+    let _message = util.format("Disconnected from port ", this.rinfo.port);
+    clients.splice(clients.indexOf(this.rinfo), 1);
+
+    this.broadcast(_message);
+    console.log(_message);
+  };
+
+  this.typeMessage = function () {
+    let _message = util.format("%d => %s", this.rinfo.port, this.message);
+
+    this.broadcast(_message);
+    console.log(_message);
+  };
+
+  this.broadcast = function (message) {
+    let _buffer = Buffer.from(message);
+
+    clients.forEach(function (current) {
+      if (current.port != self.rinfo.port) {
+        server.send(_buffer, 0, _buffer.length, current.port, current.address);
+      }
+    });
+  };
+
+  switch (type) {
+    case "connect":
+      this.typeConnect();
+      break;
+
+    case "disconnect":
+      this.typeDisconnect();
+      break;
+
+    case "message":
+      this.typeMessage();
+      break;
+
+    default:
+      // nothing
+      break;
+  }
+}
+#+end_src
+
+** =client.js=
+#+begin_src js :tangle client.js
+var dgram = require("dgram"),
+  server = {
+    host: "localhost",
+    port: 3000,
+  };
+
+function Command() {
+  process.stdin.on("data", function (chunk) {
+    var message = chunk.toString().replace(/\n|\n/g, "");
+
+    if (message === "exit") {
+      var object = '{"type":"disconnect"}';
+      console.log("Enter Ctrl + C to disconnect");
+    } else {
+      var object = `{"type":"message","message":"${message}"}`;
+    }
+
+    var buffer = Buffer.from(object);
+    client.send(buffer, 0, buffer.length, server.port, server.host);
+  });
+}
+
+var client = dgram.createSocket("udp4", function (message, rinfo) {
+  console.log("%s", message.toString());
+  process.stdin.resume();
+
+  process.stdin.removeAllListeners("data");
+  process.stdin.on("data", function (chunk) {
+    Command();
+  });
+});
+
+client.bind();
+
+client.on("listening", function () {
+  var buffer = Buffer.from('{"type":"connect"}');
+
+  console.log("Client connected on port %d", client.address().port);
+  console.log('Type "exit" to disconnected');
+  client.send(buffer, 0, buffer.length, server.port, server.host);
+});
+
+client.on("error", function (err) {
+  console.log(err);
+});
+
+client.on("close", function () {
+  var buffer = new Buffer('{"type":"disconnect"}');
+
+  console.log("Client disconnected", client.address().port);
+  client.send(buffer, 0, buffer.length, server.port, server.host);
+});
+
+process.stdin.resume();
+Command();
+#+end_src
+
+#+CAPTION: Client to server chat over UDP
+[[./img/chat.png]]
