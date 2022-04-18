@@ -1,0 +1,138 @@
+#+TITLE: Computer Networks
+#+SUBTITLE: Final Assignment
+#+AUTHOR: Seshal Jain
+#+OPTIONS: ^:nil
+#+DATE: April 18, 2022
+#+LATEX_CLASS: assignment
+#+EXPORT_FILE_NAME: 191112436
+
+* Implementing Client-Server Chat Over UDP
+** Client
+#+begin_src javascript
+// Chat application over UDP
+// Client
+
+var dgram = require("dgram")
+var server = {
+  host: "localhost",
+  port: 3000,
+};
+
+function runCommand() {
+  process.stdin.on("data", function(chunk) {
+    var message = chunk.toString().replace(/\n|\n/g, "");
+
+    var object = `{"type":"message","message":"${message}"}`;
+
+    var buffer = Buffer.from(object);
+    client.send(buffer, 0, buffer.length, server.port, server.host);
+  });
+}
+
+var client = dgram.createSocket("udp4", function(message, rinfo) {
+  console.log("%s", message.toString());
+  process.stdin.resume();
+
+  process.stdin.removeAllListeners("data");
+  process.stdin.on("data", function(chunk) {
+    runCommand();
+  });
+});
+client.bind();
+
+client.on("listening", function() {
+  var buffer = Buffer.from('{"type":"connect"}');
+
+  console.log("Client connected on port %d", client.address().port);
+  client.send(buffer, 0, buffer.length, server.port, server.host);
+});
+
+client.on("close", function() {
+  var buffer = new Buffer('{"type":"disconnect"}');
+
+  console.log("Client disconnected", client.address().port);
+  client.send(buffer, 0, buffer.length, server.port, server.host);
+});
+
+process.stdin.resume();
+runCommand();
+
+#+end_src
+
+** Server
+#+begin_src javascript
+// Chat application over UDP
+// Server
+
+const dgram = require("dgram"),
+  util = require("util"),
+  port = 3000,
+  clients = [];
+
+function Message(type, message, rinfo) {
+  let self = this;
+  this.type = type;
+  this.message = message;
+  this.rinfo = rinfo;
+
+  this.typeConnect = function() {
+    let _message = util.format("New connection on port", this.rinfo.port);
+    clients.push(rinfo);
+    this.broadcast(_message);
+    console.log(_message);
+  };
+
+
+  this.typeMessage = function() {
+    let _message = util.format("%d => %s", this.rinfo.port, this.message);
+
+    this.broadcast(_message);
+    console.log(_message);
+  };
+
+  this.broadcast = function(message) {
+    let _buffer = Buffer.from(message);
+
+    clients.forEach(function(current) {
+      if (current.port != self.rinfo.port) {
+        server.send(_buffer, 0, _buffer.length, current.port, current.address);
+      }
+    });
+  };
+
+  switch (type) {
+    case "connect":
+      this.typeConnect();
+      break;
+
+    case "message":
+      this.typeMessage();
+      break;
+
+    default:
+      break;
+  }
+}
+
+let server = dgram.createSocket("udp4", (data, rinfo) => {
+  data = JSON.parse(data);
+  message = new Message(data.type, data.message, rinfo);
+
+  process.stdin.resume();
+
+  process.stdin.removeAllListeners("data");
+  process.stdin.on("data", function(chunk) {
+    let buffer = Buffer.from(
+      `Server => ${chunk.toString().replace(/\n|\n/g, "")} `
+    );
+
+    clients.forEach(function(current) {
+      server.send(buffer, 0, buffer.length, current.port, current.address);
+    });
+  });
+});
+server.bind(port, () => { });
+#+end_src
+
+** Output
+[[./ss.png]]
