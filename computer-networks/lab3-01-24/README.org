@@ -4,64 +4,50 @@
 #+OPTIONS: num:nil toc:nil ^:nil
 #+DATE: January 24, 2022
 #+LATEX_CLASS: assignment
-#+LATEX_HEADER: \definecolor{solarized-bg}{HTML}{fdf6e3}
 #+EXPORT_FILE_NAME: 191112436
 
 * Socket program implementing =echo=
 ** =echo= server
-#+begin_src python :tangle a3p1.py :exports both
+#+begin_src python :tangle server.py
 import socket
 
-port = int(input("Enter port: "))
-host = socket.gethostname()
+HOST = socket.gethostname() # Standard loopback interface address (localhost)
+PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-print("Launching server on port", port)
-s.bind((host, port))
-s.listen(True)
-
-conn, addr = s.accept()
-print('Connection request from', addr)
-
-while True:
-    data = conn.recv(1024)
-    if not data:
-        break
-
-    conn.sendall(data)
-
-conn.close()
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.bind((HOST, PORT))
+    s.listen()
+    conn, addr = s.accept()
+    with conn:
+        print(f"Connected by {addr}")
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
 #+end_src
 
 *Output*
 #+begin_example
-Enter port: 2436
-Launching server on port 2436
-Connection request from ('127.0.0.1', 33388)
+Connected by ('127.0.0.1', 45400)
 #+end_example
 
 ** =echo= client
-#+begin_src python :tangle a3p2.py :exports both
+#+begin_src python :tangle client.py
 import socket
 
-port = int(input("Enter port: ")) # must be identical to socket server
-host = socket.gethostname()
+HOST = socket.gethostname()  # The server's hostname or IP address
+PORT = 65432  # The port used by the server
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((host, port))
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect((HOST, PORT))
+    s.sendall(b"Hello, world")
+    data = s.recv(1024)
 
-s.sendall(b'This is CN Lab 3 assignment for Seshal Jain, 191112346') # bytestring is required
-
-data = s.recv(1024)
-s.close()
-
-print('Received:', repr(data))
+print(f"Received {data!r}")
 #+end_src
 
 *Output*
 #+begin_example
-Enter port: 2436
-Received: b'This is CN Lab 3 assignment for Seshal Jain, 191112346'
+Received b'Hello, world'
 #+end_example
-
